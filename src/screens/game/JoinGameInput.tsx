@@ -6,6 +6,7 @@ import { ThemedCard } from '@/components/ThemedCard';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { ArrowLeft } from 'lucide-react';
+import { toast } from 'sonner';
 
 export const JoinGameInput = () => {
   const navigate = useNavigate();
@@ -13,11 +14,22 @@ export const JoinGameInput = () => {
   const { joinGame } = useGame();
   const [code, setCode] = useState('');
   const [playerName, setPlayerName] = useState('');
+  const [loading, setLoading] = useState(false);
 
-  const handleJoin = (e: React.FormEvent) => {
+  const handleJoin = async (e: React.FormEvent) => {
     e.preventDefault();
-    joinGame(code, playerName);
-    navigate('/game/waiting-room');
+
+    try {
+      setLoading(true);
+      await joinGame(code, playerName);
+      toast.success(`Joined game ${code}!`);
+      navigate('/game/waiting-room');
+    } catch (error) {
+      toast.error('Failed to join game. Check the code and try again.');
+      console.error(error);
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -62,9 +74,9 @@ export const JoinGameInput = () => {
               glow
               size="lg"
               className="w-full"
-              disabled={!code || !playerName || code.length < 6}
+              disabled={!code || !playerName || code.length < 6 || loading}
             >
-              Join Game
+              {loading ? 'Joining...' : 'Join Game'}
             </ThemedButton>
           </form>
 
