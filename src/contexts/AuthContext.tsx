@@ -1,10 +1,13 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import { supabase } from '@/lib/supabase';
+import type { User as SupabaseUser } from '@supabase/supabase-js';
 
 interface User {
   id: string;
   email: string;
   isEntity: boolean;
   entityId?: string;
+  supabaseUser: SupabaseUser;
 }
 
 interface AuthContextType {
@@ -22,39 +25,90 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Simulate checking for existing session
-    const checkSession = () => {
-      const storedUser = localStorage.getItem('knowsy_user');
-      if (storedUser) {
-        setUser(JSON.parse(storedUser));
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session?.user) {
+        const storedMeta = localStorage.getItem('knowsy_user_meta');
+        const meta = storedMeta ? JSON.parse(storedMeta) : { isEntity: false };
+        setUser({
+          id: session.user.id,
+          email: session.user.email || '',
+          isEntity: meta.isEntity,
+          entityId: meta.entityId,
+          supabaseUser: session.user,
+        });
       }
       setLoading(false);
-    };
-    
-    checkSession();
+    });
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (session?.user) {
+        const storedMeta = localStorage.getItem('knowsy_user_meta');
+        const meta = storedMeta ? JSON.parse(storedMeta) : { isEntity: false };
+        setUser({
+          id: session.user.id,
+          email: session.user.email || '',
+          isEntity: meta.isEntity,
+          entityId: meta.entityId,
+          supabaseUser: session.user,
+        });
+      } else {
+        setUser(null);
+      }
+    });
+
+    return () => subscription.unsubscribe();
   }, []);
 
   const login = async (email: string, password: string, isEntity: boolean) => {
-    // Placeholder login logic
-    const mockUser: User = {
-      id: Math.random().toString(36).substr(2, 9),
+    const { data, error } = await supabase.auth.signInWithPassword({
       email,
+      password,
+    });
+
+    if (error) throw error;
+    if (!data.user) throw new Error('Login failed');
+
+    const entityId = isEntity ? data.user.id : undefined;
+    const userMeta = { isEntity, entityId };
+
+    localStorage.setItem('knowsy_user_meta', JSON.stringify(userMeta));
+
+    setUser({
+      id: data.user.id,
+      email: data.user.email || '',
       isEntity,
-      entityId: isEntity ? Math.random().toString(36).substr(2, 9) : undefined,
-    };
-    
-    setUser(mockUser);
-    localStorage.setItem('knowsy_user', JSON.stringify(mockUser));
+      entityId,
+      supabaseUser: data.user,
+    });
   };
 
   const signup = async (email: string, password: string, isEntity: boolean) => {
-    // Placeholder signup logic
-    await login(email, password, isEntity);
+    const { data, error } = await supabase.auth.signUp({
+      email,
+      password,
+    });
+
+    if (error) throw error;
+    if (!data.user) throw new Error('Signup failed');
+
+    const entityId = isEntity ? data.user.id : undefined;
+    const userMeta = { isEntity, entityId };
+
+    localStorage.setItem('knowsy_user_meta', JSON.stringify(userMeta));
+
+    setUser({
+      id: data.user.id,
+      email: data.user.email || '',
+      isEntity,
+      entityId,
+      supabaseUser: data.user,
+    });
   };
 
-  const logout = () => {
+  const logout = async () => {
+    await supabase.auth.signOut();
     setUser(null);
-    localStorage.removeItem('knowsy_user');
+    localStorage.removeItem('knowsy_user_meta');
   };
 
   return (

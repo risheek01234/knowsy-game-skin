@@ -30,7 +30,8 @@ import { CreateGameScreen } from "@/screens/user/CreateGameScreen";
 import { JoinGameInput } from "@/screens/game/JoinGameInput";
 import { GameWaitingRoom } from "@/screens/game/GameWaitingRoom";
 import { TopicSelection } from "@/screens/game/TopicSelection";
-import { VIPRanking } from "@/screens/game/VIPRanking";
+import { VIPRankingScreen } from "@/screens/game/VIPRankingScreen";
+import { GameFlowCoordinator } from "@/components/game/GameFlowCoordinator";
 import { PlayerGuessing } from "@/screens/game/PlayerGuessing";
 import { RevealAnimation } from "@/screens/game/RevealAnimation";
 import { RoundScoreboard } from "@/screens/game/RoundScoreboard";
@@ -76,8 +77,8 @@ const AppRoutes = () => {
       {/* Game Routes */}
       <Route path="/game/waiting-room" element={user ? <GameWaitingRoom /> : <Navigate to="/login" />} />
       <Route path="/game/topic-selection" element={user ? <TopicSelection /> : <Navigate to="/login" />} />
-      <Route path="/game/vip-ranking" element={user ? <VIPRanking /> : <Navigate to="/login" />} />
-      <Route path="/game/guessing" element={user ? <PlayerGuessing /> : <Navigate to="/login" />} />
+      <Route path="/game/vip-ranking" element={user ? <VIPRankingScreen /> : <Navigate to="/login" />} />
+      <Route path="/game/player-guessing" element={user ? <PlayerGuessing /> : <Navigate to="/login" />} />
       <Route path="/game/reveal" element={user ? <RevealAnimation /> : <Navigate to="/login" />} />
       <Route path="/game/scoreboard" element={user ? <RoundScoreboard /> : <Navigate to="/login" />} />
       <Route path="/game/game-over" element={user ? <GameOverScreen /> : <Navigate to="/login" />} />
@@ -103,6 +104,7 @@ const App = () => (
             <Toaster />
             <Sonner />
             <BrowserRouter>
+              <GameFlowCoordinator />
               <AppRoutes />
             </BrowserRouter>
           </TooltipProvider>
