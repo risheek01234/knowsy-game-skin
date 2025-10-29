@@ -11,7 +11,7 @@ import { toast } from 'sonner';
 
 export const UserHome = () => {
   const navigate = useNavigate();
-  const { logout } = useAuth();
+  const { user, logout } = useAuth();
   const { createGame, joinGame } = useGame();
   const [quickJoinCode, setQuickJoinCode] = useState('');
   const [quickJoinName, setQuickJoinName] = useState('');
@@ -24,6 +24,14 @@ export const UserHome = () => {
   ];
 
   const handleQuickStart = async () => {
+    console.log('Quick Start - User:', user);
+
+    if (!user) {
+      toast.error('Please log in first');
+      navigate('/login');
+      return;
+    }
+
     try {
       setLoading(true);
       await createGame({
@@ -34,9 +42,10 @@ export const UserHome = () => {
       });
       toast.success('Game created! Share the code with players.');
       navigate('/game/waiting-room');
-    } catch (error) {
-      toast.error('Failed to create game');
-      console.error(error);
+    } catch (error: any) {
+      const errorMessage = error?.message || 'Failed to create game';
+      toast.error(errorMessage);
+      console.error('Create game error:', error);
     } finally {
       setLoading(false);
     }
